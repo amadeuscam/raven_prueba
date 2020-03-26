@@ -1,0 +1,98 @@
+{% extends '_base.html' %}
+
+
+{% block content %}
+    <h1>Lista de archivos subidos</h1>
+    <a class="btn  btn-primary mb-3" data-toggle="collapse" href="#collapseExample">Subir archivo</a>
+
+    <div class="collapse mb-3 " id="collapseExample">
+
+        <form action="{% url 'upload' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-row d-flex align-items-center ">
+                <div class="col"><input type="file" class="form-control" required name="document" id=""></div>
+                <div class="col">
+                    <button type="submit" class="btn  btn-outline-success">Subir</button>
+                </div>
+            </div>
+
+        </form>
+
+    </div>
+
+    <table class="table table-hover  table-sm">
+        <thead class="thead-dark">
+        <tr>
+            <th scope="col">Nombre</th>
+            <th scope="col">Fecha de subida</th>
+            <th scope="col">Tamaño</th>
+            <th scope="col">Sha256</th>
+            <th scope="col" rowspan="3">Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for rave in raven_obj %}
+            <tr>
+                <th scope="row">{{ rave.title }}</th>
+                <td>{{ rave.created|date:"m/d/Y" }}</td>
+                <td>{{ rave.size }}</td>
+                <td>{{ rave.md256sum }}</td>
+                <td class="d-flex ">
+                    {% if request.user.is_staff %}
+                        <button class="btn btn-sm btn-danger mr-1 " onclick="removeFile({{ rave.id }})"><i
+                                class="far fa-trash-alt"></i>
+                        </button>
+                        {% else %}
+                        <button class="btn btn-sm btn-danger mr-1 " disabled onclick="removeFile({{ rave.id }})"><i
+                                class="far fa-trash-alt" title="No tienes privilegios para eliminar"></i>
+                        </button>
+                    {% endif %}
+
+                    <button class="btn btn-sm btn-success" onclick="download_file({{ rave.id }})"><i
+                            class="fas fa-file-export"></i>
+                    </button>
+                </td>
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+    </table>
+
+    {% block scripts %}
+        <script>
+
+            function removeFile(id) {
+                axios.defaults.xsrfCookieName = 'csrftoken';
+                axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+                axios({
+                    method: 'post',
+                    url: "{% url 'remove_upload' %}",
+                    data: {"id": id},
+                }).then(function (response) {
+                    console.log(response.data);
+                    {#window.location.href = response.data.trim();#}
+                    location.reload();
+
+                });
+
+
+            }
+
+            function download_file(id) {
+                axios.defaults.xsrfCookieName = 'csrftoken';
+                axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+                axios({
+                    method: 'get',
+                    url: `{% url 'upload' %}?id=${id}`,
+                }).then(function (response) {
+                    console.log(response.data);
+                    window.location.href = response.data.trim();
+
+                });
+            }
+        </script>
+    {% endblock %}
+
+{% endblock %}
